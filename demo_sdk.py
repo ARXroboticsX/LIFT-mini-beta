@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""
+ARX LIFT 2026 底盘/升降 API 示例
+
+演示 InterfacesPy 的基本用法: 状态读取 + 各运动指令模板 (默认注释, 按需启用)。
+手柄控制见 demo_joy.py。
+"""
+
+import time
+from liftlib import InterfacesPy, RobotType
+
+
+def main():
+    # 配置
+    CAN_ROBOT = 'can5'  # 机器人CAN接口
+    ROBOT_TYPE = RobotType.LIFT2026_4310_3519
+
+    print("正在初始化机器人...")
+
+    try:
+        # 初始化机器人
+        robot = InterfacesPy(CAN_ROBOT, ROBOT_TYPE)
+        print(f"✓ 机器人已连接 (CAN: {CAN_ROBOT})")
+
+        # 控制参数
+        robot.loop()
+        lift_height = robot.get_height()  # 启动时的升降高度 (增量式基准, 无需复位)
+        set_height_cmd = 0.0              
+
+
+
+        # 控制循环
+        while True:
+
+
+            # 设置升降高度  (0,0.38)!!!!!!!
+            # 此处为了保持上电后无需复位，设置增量值
+            # set_height_cmd=0     #距启动前，增加的高度值
+            # set_lift_height=lift_height+set_height_cmd
+            # robot.set_height(set_lift_height)
+
+
+            # 底盘速度，设置模式为1  x，y，z，mode
+            # robot.set_chassis_cmd(0,0,0,1)
+
+            
+            # 轮速控制，设置模式为3
+            # robot.set_chassis_cmd(0,0,0,3)
+            # robot.set_wheel_vel(0,0,0,0)
+
+
+            # 获取高度值
+            get_chassis_height=robot.get_height()
+
+            # 轮速获取
+            get_wheel_vel=robot.get_wheel_vel()
+
+            print(f"当前高度: {get_chassis_height}")
+            print(f"轮速: {get_wheel_vel}")
+
+
+
+            # 执行控制循环
+            robot.loop()
+            time.sleep(0.0025)
+
+    except KeyboardInterrupt:
+        print("\n\n正在退出...")
+    except Exception as e:
+        print(f"\n错误: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+    return 0
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main())
