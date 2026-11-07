@@ -31,12 +31,10 @@ def main():
 
         # 控制参数
         robot.loop()
-        lift_height = robot.get_height()  # 启动时的升降高度 (增量式基准, 无需复位)
-        set_height_cmd = 0.0              # 距启动时增加的高度值 (必须在循环外初始化)
-        last_time = time.time()
+        last_print = 0.0
 
         # 手感参数
-        LIFT_RATE = 0.04   # m/s   — 摇杆推满时升降目标变化速率 (平台极限≈0.034)
+        LIFT_GAIN = 1.0    # 摇杆推满时升降速度 = 机型速度上限 × 该系数 (0-1)
         V_XY_MAX = 0.15    # m/s   — 摇杆推满时的平移速度
         W_Z_MAX = 0.45     # rad/s — 旋转速度
         W_Z_GATE = 0.5     # 旋转轴推过半程才生效 (防误触)
@@ -47,18 +45,9 @@ def main():
             axes = joy.get_axes()        # [左Y, 左X, 0.0, 右Y, 右X], 范围 [-1,1], 含死区
             buttons = joy.get_buttons()  # 4 个按钮 (半字节值)
 
-            # 本拍时长 (积分用); 异常跳变不积分
-            now = time.time()
-            dt = now - last_time
-            last_time = now
-            if dt > 1.0:
-                dt = 0.0
-
-            # 升降: 左摇杆 Y (axes[0]) 增量调目标, 乘 dt 才与循环频率无关
-            set_height_cmd += axes[0] * LIFT_RATE * dt
-            set_lift_height = max(0.0, min(0.38, lift_height + set_height_cmd))
-            set_height_cmd = set_lift_height - lift_height   # 回写, 防积分饱和
-            robot.set_height(set_lift_height)
+            # 升降: 左摇杆 Y (axes[0]) 直接当速度用 —— 推满即机型最高速,
+            # 松杆立即就地保持 (不是积分目标, 不会「松杆后还在走」)
+            robot.set_lift_vel(axes[0] * LIFT_GAIN)
 
             # 底盘: 右摇杆平移 (Y=前后 X=左右), 左摇杆 X 旋转 (过半程生效)
             w_z = axes[1] * W_Z_MAX if abs(axes[1]) > W_Z_GATE else 0.0
@@ -70,19 +59,12 @@ def main():
             # robot.set_wheel_vel(0,0,0,0)
 
 
-            # 获取高度值
-            get_chassis_height=robot.get_height()
-
-            # 轮速获取
-            get_wheel_vel=robot.get_wheel_vel()
-
-            print(f"当前高度: {get_chassis_height}")
-            print(f"轮速: {get_wheel_vel}")
-
-
-
-
-
+            # 状态打印限 10Hz —— 400Hz 每拍 print 会拖慢控制循环, 手感变差
+            now = time.time()
+            if now - last_print > 0.1:
+                last_print = now
+                print(f"当前高度: {robot.get_height():.3f}  轮速: "
+                      f"{[round(v, 2) for v in robot.get_wheel_vel()]}")
 
             # 执行控制循环
             robot.loop()

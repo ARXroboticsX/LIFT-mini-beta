@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
 ARX LIFT 2026 底盘/升降 API 示例
-
-演示 InterfacesPy 的基本用法: 状态读取 + 各运动指令模板 (默认注释, 按需启用)。
-手柄控制见 demo_joy.py。
 """
 
 import time
@@ -38,10 +35,11 @@ def main():
             # set_height_cmd=0     #距启动前，增加的高度值
             # set_lift_height=lift_height+set_height_cmd
             # robot.set_height(set_lift_height)
+            robot.set_height(0.1)
 
 
-            # 底盘速度，设置模式为1  x，y，z，mode
-            # robot.set_chassis_cmd(0,0,0,1)
+            # 底盘速度，设置模式为1  x，y，z，mode  eg:(0.1,0,0,1)
+            robot.set_chassis_cmd(0,0,0,1)
 
             
             # 轮速控制，设置模式为3
@@ -49,14 +47,22 @@ def main():
             # robot.set_wheel_vel(0,0,0,0)
 
 
+            # 头部角度 rad (仅 X7 机型, LIFT 机型为空操作): 自动钳制软限位, 限速转动
+            robot.set_head_yaw(0.2) 
+            robot.set_head_pitch(-0.2)
+
             # 获取高度值
             get_chassis_height=robot.get_height()
 
             # 轮速获取
             get_wheel_vel=robot.get_wheel_vel()
+            
+            # 头部姿态获取
+            get_head_pos=robot.get_head_pos()
 
             print(f"当前高度: {get_chassis_height}")
             print(f"轮速: {get_wheel_vel}")
+            # print(f"头部角度: {get_head_pos}")
 
 
 
